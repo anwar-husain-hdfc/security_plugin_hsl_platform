@@ -79,7 +79,7 @@ class SecurityUtils {
   static const isTesting = true;
   static void _logDebug(String message) {
     if (kDebugMode || isTesting) {
-      print('IR_SECURITY: $message');
+      debugPrint('HSL_SECURITY: $message');
     }
   }
 }

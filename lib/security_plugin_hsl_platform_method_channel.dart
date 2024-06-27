@@ -265,13 +265,13 @@ class MethodChannelSecurityPluginHslPlatform
 
   void _logError(String message, Object e, [StackTrace? stackTrace]) {
     if (kDebugMode || isTesting) {
-      debugPrint('IR_SECURITY: $message: $e');
+      debugPrint('HSL_SECURITY: $message: $e');
     }
   }
 
   void _logDebug(String message) {
     if (kDebugMode || isTesting) {
-      debugPrint('IR_SECURITY: $message');
+      debugPrint('HSL_SECURITY: $message');
     }
   }
 }

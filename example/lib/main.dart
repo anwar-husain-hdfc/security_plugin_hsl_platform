@@ -6,7 +6,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:security_plugin_hsl_platform/device_security_status.dart';
 import 'package:security_plugin_hsl_platform/security_check_result.dart';
 import 'package:security_plugin_hsl_platform/security_plugin_hsl_platform.dart';
-import 'package:security_plugin_hsl_platform/ui/rooted_alert_widget.dart';
+import 'package:security_plugin_hsl_platform/ui/hsl_security_alert_widget.dart';
+import 'package:security_plugin_hsl_platform/ui/hsl_security_theme_global.dart';
 import 'package:security_plugin_hsl_platform/ui/secure_application_wrapper.dart';
 import 'package:security_plugin_hsl_platform/util/malicious_app_checker.dart';
 
@@ -70,7 +71,7 @@ class _MyAppState extends State<MyApp> {
     try {
       SecurityCheckResult checkResult = await _securityIrPlugin.init();
       final securityStatus = checkResult.status;
-      print('IR_SECURITY: DeviceSecurityStatus ${securityStatus.name}');
+      debugPrint('HSL_SECURITY: DeviceSecurityStatus ${securityStatus.name}');
       if (securityStatus != DeviceSecurityStatus.secure) {
         setState(() {
           securityCheckResult =
@@ -105,7 +106,7 @@ class _MyAppState extends State<MyApp> {
     super.dispose();
   }
 
-  final theme = ThemeGlobal(
+  final theme = HslSecurityThemeGlobal(
       APP_COLOR: Colors.blueAccent, WHITE_COLOR: Colors.white);
 
   @override
@@ -121,8 +122,9 @@ class _MyAppState extends State<MyApp> {
     } else {
       return MaterialApp(
         home: SecureApplicationWrapper(
+          isSecurityEnabled: true,
           child: showDeviceSecurityWidget
-              ? RootedAlertWidget(packageName, securityCheckResult: securityCheckResult, theme: theme,)
+              ? HslSecurityAlertWidget(packageName, securityCheckResult: securityCheckResult, theme: theme,)
               : const SecureAppContent(),
         ),
       );
@@ -151,7 +153,7 @@ Future<String> getPackageName() async {
       return packageInfo.packageName;
   } catch (e) {
     // Handle any errors that might occur during the retrieval
-    print('Error retrieving package info: $e');
+    debugPrint('Error retrieving package info: $e');
     return "";
   }
 }

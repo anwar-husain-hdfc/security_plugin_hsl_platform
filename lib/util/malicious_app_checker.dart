@@ -108,7 +108,7 @@ class MaliciousAppChecker {
 
   void _logDebug(String message, {bool isTesting = false}) {
     if (kDebugMode || isTesting) {
-      print('IR_SECURITY: $message');
+      debugPrint('HSL_SECURITY: $message');
     }
   }
 }

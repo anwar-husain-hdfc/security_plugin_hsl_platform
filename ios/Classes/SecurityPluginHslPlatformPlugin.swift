@@ -15,8 +15,8 @@ public class SecurityPluginHslPlatformPlugin: NSObject, FlutterPlugin {
 
     case "root_detection":
        let jailBreakTestResult = JailBreakTestService().isJailBroken()
-       print("IR_SECURITY: \(jailBreakTestResult.msg)")
-       print("IR_SECURITY: \(jailBreakTestResult.failed)")
+       print("HSL_SECURITY: \(jailBreakTestResult.msg)")
+       print("HSL_SECURITY: \(jailBreakTestResult.failed)")
        result(jailBreakTestResult.failed)
 
     default:
