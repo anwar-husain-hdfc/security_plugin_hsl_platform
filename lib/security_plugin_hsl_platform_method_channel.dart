@@ -38,7 +38,7 @@ class MethodChannelSecurityPluginHslPlatform
         _checkNativeRootDetection(),
         _checkRoot(),
         _checkAppIntegrity(),
-        if (Platform.isAndroid) _checkAndroidSpecificSecurity()
+        // if (Platform.isAndroid) _checkAndroidSpecificSecurity()
       ]);
 
       final nativeRootCheck = results[0];
