@@ -58,17 +58,15 @@ class HslSecurityAlertWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              Spacer(),
+              const Spacer(),
               if (isTampered())
-                RoundedLoadingButton(
-                  borderRadius: 12,
-                  width: MediaQuery.of(context).size.width,
-                  color: theme.APP_COLOR,
-                  controller: _btnController,
-                  child: Text(
-                      'Download from ${Platform.isAndroid ? 'Play' : Platform.isIOS ? 'App' : 'Trused'} Store',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(color: theme.WHITE_COLOR)),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ), backgroundColor: theme.APP_COLOR,
+                    minimumSize: Size(MediaQuery.of(context).size.width, 50), // Background color
+                  ),
                   onPressed: () async {
                     await launchUrlString(
                       Platform.isAndroid
@@ -78,8 +76,11 @@ class HslSecurityAlertWidget extends StatelessWidget {
                           : 'https://hdfcsky.onelink.me/GjMn/ewet8kk7',
                       mode: LaunchMode.externalApplication,
                     );
-                    _btnController.reset();
                   },
+                  child: Text(
+                    'Download from ${Platform.isAndroid ? 'Play' : Platform.isIOS ? 'App' : 'Trusted'} Store',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: theme.WHITE_COLOR),
+                  ),
                 ),
             ],
           ),
