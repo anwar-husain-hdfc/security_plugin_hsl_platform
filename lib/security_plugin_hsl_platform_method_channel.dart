@@ -167,9 +167,10 @@ class MethodChannelSecurityPluginHslPlatform
   }
 
   bool _isPlayIntegrity(List<String> playIntegrity) {
-    return playIntegrity.contains(MEETS_BASIC_INTEGRITY) &&
+    return playIntegrity.contains(MEETS_BASIC_INTEGRITY);
+/*        &&
         playIntegrity.contains(MEETS_DEVICE_INTEGRITY) &&
-        playIntegrity.contains(MEETS_STRONG_INTEGRITY);
+        playIntegrity.contains(MEETS_STRONG_INTEGRITY);*/
   }
 
   Future<bool> _checkAppIntegrity() async {
