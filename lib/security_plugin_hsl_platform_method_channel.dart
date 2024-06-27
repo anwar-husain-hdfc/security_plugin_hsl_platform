@@ -33,13 +33,27 @@ class MethodChannelSecurityPluginHslPlatform
   Future<SecurityCheckResult> init() async {
     bool isTampered = false;
     bool sslVerified = true;
+    try {
+      final results = await Future.wait([
+        _checkNativeRootDetection(),
+        _checkRoot(),
+        _checkAppIntegrity(),
+        if (Platform.isAndroid) _checkAndroidSpecificSecurity()
+      ]);
 
-    final bool nativeRootCheck = await _checkNativeRootDetection();
+      final nativeRootCheck = results[0];
+      _logDebug("nativeRootCheck - $nativeRootCheck");
+      final checkRootFlutterSc = results[1];
+      _logDebug("checkRootFlutterSc - $checkRootFlutterSc");
+      final bool rooted = checkRootFlutterSc || nativeRootCheck;
+      final isAppVerified = results[2];
+
+/*    final bool nativeRootCheck = await _checkNativeRootDetection();
     _logDebug("nativeRootCheck - $nativeRootCheck");
     final bool checkRootFlutterSc = await _checkRoot();
     _logDebug("checkRootFlutterSc - $checkRootFlutterSc");
     final bool rooted = checkRootFlutterSc || nativeRootCheck;
-    final bool isAppVerified = await _checkAppIntegrity();
+    final bool isAppVerified = await _checkAppIntegrity();*/
 
     if (rooted) {
       _logDebug("device is rooted");
@@ -77,6 +91,11 @@ class MethodChannelSecurityPluginHslPlatform
     } else {
       return SecurityCheckResult(DeviceSecurityStatus.secure, secondaryMessage);
     }
+    } catch (e) {
+      _logError('Error during security check initialization', e);
+      return SecurityCheckResult(
+          DeviceSecurityStatus.secure, ['Error during initialization']);
+    }
   }
 
   Future<bool> _checkAndroidSpecificSecurity() async {
@@ -104,15 +123,22 @@ class MethodChannelSecurityPluginHslPlatform
     }
 
     try {
-      final bool isRooted =
-          await methodChannel.invokeMethod<bool>('root_detection') ?? false;
+      // final bool isRooted = await methodChannel.invokeMethod<bool>('root_detection') ?? false;
+      final bool isRooted;
+      List<dynamic>? playIntegrityRaw;
+      bool isPlayIntegrityPassed = true; // Default to true or handle as needed for non-Android
+      final results = await Future.wait([
+        methodChannel.invokeMethod<bool>('root_detection'),
+        if (Platform.isAndroid) methodChannel.invokeMethod<List<dynamic>>('play_integrity'),
+      ]);
+      // Extract results
+      isRooted = results[0] as bool? ?? false;
       _logDebug("_checkNativeRootDetection isRooted- $isRooted");
-      bool isPlayIntegrityPassed =
-          true; // Default to true or handle as needed for non-Android
       if (Platform.isAndroid) {
+        playIntegrityRaw = results[1] as List<dynamic>?;
         // Fetch Play Integrity data with null safety
-        final List<dynamic>? playIntegrityRaw =
-            await methodChannel.invokeMethod<List<dynamic>>('play_integrity');
+        // final List<dynamic>? playIntegrityRaw =
+        //     await methodChannel.invokeMethod<List<dynamic>>('play_integrity');
         // Handle potential null values explicitly
         if (playIntegrityRaw != null) {
           final List<String> playIntegrity =
