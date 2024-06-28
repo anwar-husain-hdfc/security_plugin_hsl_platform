@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:secure_application/secure_application.dart';
 import 'dart:async'; // For StreamSubscription
@@ -21,7 +23,7 @@ class _SecureApplicationWrapperState extends State<SecureApplicationWrapper> {
   void initState() {
     super.initState();
     // Initialize the subscription in initState
-    if(widget.isSecurityEnabled) {
+    if(widget.isSecurityEnabled && Platform.isIOS) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final secureProvider = SecureApplicationProvider.of(
             context, listen: false);
@@ -49,7 +51,7 @@ class _SecureApplicationWrapperState extends State<SecureApplicationWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.isSecurityEnabled == false) {
+    if (widget.isSecurityEnabled == false || Platform.isAndroid) {
       return widget.child;
     } else return SecureApplication(
       nativeRemoveDelay: nativeRemoveDelay,
