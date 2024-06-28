@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
-import 'package:provider/provider.dart';
+import 'package:security_plugin_hsl_platform/ui/hsl_security_theme_global.dart';
 
 import '../util/theme_provider.dart';
 
@@ -17,7 +17,7 @@ class MaliciousAppAlertWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Provider.of<ThemeGlobal>(context);
+    final theme = HslSecurityThemeGlobal(APP_COLOR: Colors.blueAccent, WHITE_COLOR: Colors.white);
 
     return AlertDialog(
       title: Icon(
@@ -30,16 +30,13 @@ class MaliciousAppAlertWidget extends StatelessWidget {
           children: <Widget>[
             Text(
               'Security Alert',
-              style: theme.themeData?.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
             ),
             SizedBox(height: 16),
             Text(
               'The application "$appName" has been identified as potentially malicious. It is strongly recommended to uninstall this application to protect your device.',
-              style: theme.themeData?.textTheme.bodyMedium?.copyWith(
-                color: Colors.black87,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
         ),
