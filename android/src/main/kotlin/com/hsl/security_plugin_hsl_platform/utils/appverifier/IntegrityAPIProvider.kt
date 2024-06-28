@@ -165,7 +165,7 @@ class IntegrityAPIProvider(private val context: Context) {
             if (context.packageName == "com.hsl.investright") {
                 encodedVerificationKey = Base64.decode(BuildConfig.INTEGRITY_VERIFICATION_KEY_IR, Base64.DEFAULT)
             } else {
-                Base64.decode(BuildConfig.INTEGRITY_VERIFICATION_KEY, Base64.DEFAULT)
+                encodedVerificationKey = Base64.decode(BuildConfig.INTEGRITY_VERIFICATION_KEY, Base64.DEFAULT)
             }
 
 
