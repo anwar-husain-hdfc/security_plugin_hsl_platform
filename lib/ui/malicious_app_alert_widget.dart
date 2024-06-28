@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 import 'package:security_plugin_hsl_platform/ui/hsl_security_theme_global.dart';
 
-import '../util/theme_provider.dart';
-
 class MaliciousAppAlertWidget extends StatelessWidget {
   final String appName;
   final VoidCallback onOk;
