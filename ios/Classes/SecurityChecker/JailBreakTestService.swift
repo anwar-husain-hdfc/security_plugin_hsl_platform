@@ -44,6 +44,11 @@ internal struct JailBreakTestService {
             return suspiciousAppPresenceTestResult
         }
         
+        // Perform advanced jailbreak checks
+        if let advancedChecksResult = performAdvancedJailbreakChecks() {
+            return advancedChecksResult
+        }
+                
         return (false, "All the jail break tests passed")
     }
     
@@ -211,4 +216,265 @@ internal struct JailBreakTestService {
         }
         return (false, "")
     }
+    
+    // List of suspicious dynamic libraries (dylibs) typically associated with jailbreak or unauthorized modifications.
+    private let suspiciousDylibs = [
+        "/usr/lib/libshadow.dylib",
+        "/usr/lib/Shadow.dylib",
+        "/Library/MobileSubstrate/DynamicLibraries/Shadow.dylib",
+        "/Library/MobileSubstrate/DynamicLibraries/libshadow.dylib"
+    ]
+
+    // List of file paths related to the Shadow framework, which is often used in unauthorized or jailbroken environments.
+    private let shadowPaths = [
+        "/Library/PreferenceBundles/ShadowPreferences.bundle",
+        "/var/mobile/Library/Preferences/me.jjolano.shadow.plist",
+        "/Library/MobileSubstrate/DynamicLibraries/Shadow.dylib"
+    ]
+
+    // List of environment variables that are often manipulated in unauthorized or compromised environments.
+    private let suspiciousEnvVars = [
+        "DYLD_INSERT_LIBRARIES",
+        "DYLD_FORCE_FLAT_NAMESPACE"
+    ]
+
+    // List of hooking libraries that might be used to alter the behavior of system or application code.
+    private let hookingLibraries = [
+        "libhooker.dylib",
+        "SubstrateBootstrap.dylib",
+        "Substitute.dylib",
+        "TSInject.dylib"
+    ]
+
+    // Utility function to check for the existence of files at specified paths.
+    // Returns a CheckResult indicating success or failure, along with a message.
+    private func checkFilesExistence(atPaths paths: [String], failureMessage: String) -> CheckResult {
+        for path in paths {
+            if FileManager.default.fileExists(atPath: path) {
+                return (true, "\(failureMessage) found at path: \(path)")
+            }
+        }
+        return (false, "")
+    }
+
+    // Check for the presence of suspicious dylibs related to unauthorized modifications or jailbreaks.
+    private func shadowDylibCheck() -> CheckResult {
+        return checkFilesExistence(atPaths: suspiciousDylibs, failureMessage: "Shadow Dylib Check failed. Suspicious dylib")
+    }
+
+    // Check for the presence of files associated with the Shadow framework, which may indicate a compromised environment.
+    private func shadowFilesCheck() -> CheckResult {
+        return checkFilesExistence(atPaths: shadowPaths, failureMessage: "Shadow Files Check failed. Shadow-related file")
+    }
+
+    // Check if the description method of NSObject has been swizzled, which could indicate tampering or unauthorized modifications.
+    private func methodSwizzlingCheck() -> CheckResult {
+        guard
+            let originalMethod = class_getInstanceMethod(NSObject.self, #selector(NSObject.description)),
+            let swizzledMethod = class_getInstanceMethod(NSObject.self, Selector(("shadow_description"))),
+            method_getImplementation(originalMethod) != method_getImplementation(swizzledMethod)
+        else {
+            return (false, "")
+        }
+        return (true, "Method Swizzling Check failed. Description method has been swizzled.")
+    }
+
+    // Check if a debugger is attached to the current process, which may indicate unauthorized monitoring or debugging.
+    private func debuggerCheck() -> CheckResult {
+        var info = kinfo_proc()
+        var mib = [CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()]
+        var size = MemoryLayout<kinfo_proc>.stride
+        let sysctlResult = sysctl(&mib, u_int(mib.count), &info, &size, nil, 0)
+        
+        if sysctlResult == 0 && (info.kp_proc.p_flag & P_TRACED) != 0 {
+            return (true, "Debugger Check failed. A debugger is attached to the process.")
+        }
+        return (false, "")
+    }
+
+    // Check for the presence of suspicious environment variables that may be manipulated in compromised environments.
+    private func environmentVariablesCheck() -> CheckResult {
+        for varName in suspiciousEnvVars {
+            if let value = getenv(varName), !String(cString: value).isEmpty {
+                return (true, "Environment Variables Check failed. Suspicious environment variable found: \(varName)")
+            }
+        }
+        return (false, "")
+    }
+
+    // Test the sandbox integrity by attempting to write to a protected directory.
+    // If writing is successful, it indicates a breach of the sandbox.
+    private func sandboxIntegrityCheck() -> CheckResult {
+        let testFilePath = "/private/var/mobile/Library/SandboxTest.txt"
+        
+        do {
+            try "Sandbox Test".write(toFile: testFilePath, atomically: true, encoding: .utf8)
+            try FileManager.default.removeItem(atPath: testFilePath)
+            return (true, "Sandbox Integrity Check failed. Writing to a protected directory was successful.")
+        } catch {
+            return (false, "")
+        }
+    }
+
+    // Check the integrity of system frameworks by attempting to load a critical framework (UIKit) and verify its contents.
+    // Returns a CheckResult indicating if the framework has been tampered with or is missing essential components.
+    private func systemFrameworkIntegrityCheck() -> CheckResult {
+        guard let handle = dlopen("/System/Library/Frameworks/UIKit.framework/UIKit", RTLD_NOW) else {
+            return (true, "System Framework Integrity Check failed. Unable to load UIKit framework.")
+        }
+        
+        defer {
+            dlclose(handle)
+        }
+        
+        let expectedSymbol = dlsym(handle, "UIApplicationMain")
+        if expectedSymbol == nil {
+            return (true, "System Framework Integrity Check failed. UIApplicationMain symbol is missing or tampered.")
+        }
+        
+        return (false, "")
+    }
+
+    // Check for the presence of known hooking libraries that may alter the behavior of the application or system.
+    // Returns a CheckResult indicating if any hooking libraries were detected.
+    private func hookingLibrariesCheck() -> CheckResult {
+        for library in hookingLibraries {
+            if let handle = dlopen(library, RTLD_NOW) {
+                dlclose(handle)
+                return (true, "Hooking Libraries Check failed. Detected hooking library: \(library)")
+            }
+        }
+        return (false, "")
+    }
+
+    // Perform multiple checks using the fork system call to detect if the process has been tampered with.
+    // Returns a CheckResult indicating if any of the checks failed.
+    private func multipleForkChecks() -> CheckResult {
+        for _ in 0..<5 {
+            let result = forkTestResult()
+            if result.failed {
+                return result
+            }
+        }
+        return (false, "")
+    }
+    
+    private func libertyCheck() -> CheckResult {
+        let libertyPaths = [
+            "/usr/lib/liberty.dylib",
+            "/Library/MobileSubstrate/DynamicLibraries/Liberty.dylib",
+            "/Library/MobileSubstrate/DynamicLibraries/LibertyLite.dylib"
+        ]
+        
+        for path in libertyPaths {
+            if FileManager.default.fileExists(atPath: path) {
+                return (true, "Liberty Check failed. Detected Liberty files at path: \(path)")
+            }
+        }
+        return (false, "")
+    }
+
+    private func objectionCheck() -> CheckResult {
+        // Checking for the presence of Frida gadgets
+        let objectionFiles = [
+            "/usr/lib/frida-gadget.dylib",
+            "/Library/MobileSubstrate/DynamicLibraries/frida.dylib"
+        ]
+        
+        for path in objectionFiles {
+            if FileManager.default.fileExists(atPath: path) {
+                return (true, "Objection Check failed. Detected Frida gadget or objection-related files at path: \(path)")
+            }
+        }
+        return (false, "")
+    }
+    
+    private func fridaCheck() -> CheckResult {
+        // Check for common Frida-related libraries that may be injected into the app
+        let fridaLibraries = [
+            "FridaGadget", // Frida Gadget is a common injection point
+            "frida-agent"  // Another common Frida component
+        ]
+        
+        for library in fridaLibraries {
+            if let handle = dlopen(library, RTLD_NOW) {
+                dlclose(handle)
+                return (true, "Frida Check failed. Detected loaded Frida library: \(library)")
+            }
+        }
+        
+        // Check for Frida symbols in the app’s memory
+        let fridaSymbols = [
+            "frida_version",  // Frida version symbol
+            "gum_interceptor_begin_transaction" // A function used by Frida’s GumJS to intercept method calls
+        ]
+        
+        for symbol in fridaSymbols {
+            if dlsym(UnsafeMutableRawPointer(bitPattern: -2), symbol) != nil {
+                return (true, "Frida Check failed. Detected Frida symbol in memory: \(symbol)")
+            }
+        }
+        
+        return (false, "")
+    }
+    
+    private func shadowConfigCheck() -> CheckResult {
+        let shadowConfigPaths = [
+            "/var/mobile/Library/Preferences/me.jjolano.shadow.plist",
+            "/Library/PreferenceLoader/Preferences/Shadow.plist"
+        ]
+        
+        for path in shadowConfigPaths {
+            if FileManager.default.fileExists(atPath: path) {
+                return (true, "Shadow Configuration Check failed. Detected Shadow configuration file at path: \(path)")
+            }
+        }
+        return (false, "")
+    }
+    
+    private func shadowHooksCheck() -> CheckResult {
+        // Check if known methods that Shadow might hook into have been tampered with.
+        // This example checks if a common method has been replaced or altered.
+
+        let originalMethod = class_getInstanceMethod(NSObject.self, #selector(NSObject.description))
+        let shadowedMethod = class_getInstanceMethod(NSObject.self, Selector(("shadow_description")))
+        
+        if let originalMethod = originalMethod, let shadowedMethod = shadowedMethod {
+            if method_getImplementation(originalMethod) != method_getImplementation(shadowedMethod) {
+                return (true, "Shadow Hooks Check failed. NSObject description method has been swizzled by Shadow.")
+            }
+        }
+        
+        return (false, "")
+    }
+
+    // Execute a series of advanced jailbreak checks, including system integrity, debugger detection, environment variable checks, and more.
+    // Returns the first CheckResult that fails, or nil if all checks pass.
+    private func performAdvancedJailbreakChecks() -> CheckResult? {
+        let checks: [() -> CheckResult] = [
+            debuggerCheck,
+            environmentVariablesCheck,
+            sandboxIntegrityCheck,
+            systemFrameworkIntegrityCheck,
+            hookingLibrariesCheck,
+            multipleForkChecks,
+            shadowDylibCheck,
+            shadowFilesCheck,
+            shadowConfigCheck,
+            shadowHooksCheck,
+            methodSwizzlingCheck,
+            libertyCheck, // Liberty detection
+            objectionCheck, // Objection detection
+            fridaCheck // Optimized Frida detection
+        ]
+        
+        for check in checks {
+            let result = check()
+            if result.failed {
+                return result
+            }
+        }
+        return nil
+    }
+    
 }
