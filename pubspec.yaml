@@ -24,6 +24,8 @@ dependencies:
   package_info_plus: ^7.0.0
   secure_application:
     path: ./secure_application-master
+  flutter_jailbreak_detection:
+    path: ../flutter_jailbreak_detection
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_jailbreak_detection/flutter_jailbreak_detection.dart';
 import 'package:flutter_security_checker/flutter_security_checker.dart';
 import 'package:security_plugin_hsl_platform/security_check_result.dart';
 import 'package:security_plugin_hsl_platform/security_utils/security_utils.dart';
@@ -38,15 +39,19 @@ class MethodChannelSecurityPluginHslPlatform
         _checkNativeRootDetection(),
         _checkRoot(),
         _checkAppIntegrity(),
-        // if (Platform.isAndroid) _checkAndroidSpecificSecurity()
+        _checkiOSSpecificSecurity()
       ]);
-
+      // if (Platform.isAndroid) _checkAndroidSpecificSecurity()
       final nativeRootCheck = results[0];
-      _logDebug("nativeRootCheck - $nativeRootCheck");
+      _logDebug("[_checkNativeRootDetection] - nativeRootCheck - $nativeRootCheck");
       final checkRootFlutterSc = results[1];
-      _logDebug("checkRootFlutterSc - $checkRootFlutterSc");
-      final bool rooted = checkRootFlutterSc || nativeRootCheck;
+      _logDebug("[_checkRoot] - checkRootFlutterSc - $checkRootFlutterSc");
       final isAppVerified = results[2];
+      _logDebug("[_checkAppIntegrity] - isAppVerified - $isAppVerified");
+      bool jailbroken =  results[3];
+      _logDebug("[_checkiOSSpecificSecurity] - jailbroken - $jailbroken");
+
+      final bool rooted = checkRootFlutterSc || nativeRootCheck || jailbroken;
 
 /*    final bool nativeRootCheck = await _checkNativeRootDetection();
     _logDebug("nativeRootCheck - $nativeRootCheck");
@@ -249,7 +254,13 @@ class MethodChannelSecurityPluginHslPlatform
       return false;
     }
   }
-
+  Future<bool> _checkiOSSpecificSecurity() async {
+    bool jailbroken = await FlutterJailbreakDetection.jailbroken;
+    bool developerMode = await FlutterJailbreakDetection.developerMode; // android only.
+    _logDebug("FlutterJailbreakDetection: jailbroken $jailbroken");
+    _logDebug("FlutterJailbreakDetection: developerMode $developerMode");
+    return jailbroken;
+  }
   Future<bool> _fridaOrMagiskDetected() async {
     try {
       final bool isAppIntegrity =
