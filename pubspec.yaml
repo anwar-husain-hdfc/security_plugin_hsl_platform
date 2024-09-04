@@ -25,7 +25,10 @@ dependencies:
   secure_application:
     path: ./secure_application-master
   flutter_jailbreak_detection:
-    path: ../flutter_jailbreak_detection
+    git:
+      url: https://gitlab.hdfcsec.com/sky-bau/flutter_jailbreak_detection.git
+      ref: "fc25066e55a6090f293a2f62b95dfd0cb0aa03f4"
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
