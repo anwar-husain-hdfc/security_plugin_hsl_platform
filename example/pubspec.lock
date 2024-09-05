@@ -142,9 +142,11 @@ packages:
   flutter_jailbreak_detection:
     dependency: transitive
     description:
-      path: "../../flutter_jailbreak_detection"
-      relative: true
-    source: path
+      path: "."
+      ref: fc25066e55a6090f293a2f62b95dfd0cb0aa03f4
+      resolved-ref: fc25066e55a6090f293a2f62b95dfd0cb0aa03f4
+      url: "https://gitlab.hdfcsec.com/sky-bau/flutter_jailbreak_detection.git"
+    source: git
     version: "1.10.0"
   flutter_lints:
     dependency: "direct dev"
