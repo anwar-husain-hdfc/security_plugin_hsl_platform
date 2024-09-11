@@ -9,6 +9,7 @@ import 'package:security_plugin_hsl_platform/security_utils/security_utils.dart'
 import 'package:security_plugin_hsl_platform/util/encrypt_pref.dart';
 
 import 'device_security_status.dart';
+import 'models/hsl_security.dart';
 import 'security_plugin_hsl_platform_platform_interface.dart';
 
 const String MEETS_DEVICE_INTEGRITY = "MEETS_DEVICE_INTEGRITY";
@@ -31,15 +32,15 @@ class MethodChannelSecurityPluginHslPlatform
   }
 
   @override
-  Future<SecurityCheckResult> init() async {
+  Future<SecurityCheckResult> init(HslSecurity hslSecurity) async {
     bool isTampered = false;
     bool sslVerified = true;
     try {
       final results = await Future.wait([
-        _checkNativeRootDetection(),
-        _checkRoot(),
-        _checkAppIntegrity(),
-        _checkiOSSpecificSecurity()
+        _checkNativeRootDetection(hslSecurity),
+        _checkRoot(hslSecurity),
+        _checkAppIntegrity(hslSecurity),
+        _checkiOSSpecificSecurity(hslSecurity)
       ]);
       // if (Platform.isAndroid) _checkAndroidSpecificSecurity()
       final nativeRootCheck = results[0];
@@ -115,14 +116,16 @@ class MethodChannelSecurityPluginHslPlatform
     }
   }
 
-  Future<bool> _checkRoot() async {
+  Future<bool> _checkRoot(HslSecurity hslSecurity) async {
+    if (hslSecurity.rootCheck == false) return false;
     if (kDebugMode && !isTesting) {
       return false;
     }
     return FlutterSecurityChecker.isRooted;
   }
 
-  Future<bool> _checkNativeRootDetection() async {
+  Future<bool> _checkNativeRootDetection(HslSecurity hslSecurity) async {
+    if (hslSecurity.rootCheck == false) return false;
     if (kDebugMode && !isTesting) {
       return false;
     }
@@ -179,7 +182,8 @@ class MethodChannelSecurityPluginHslPlatform
         playIntegrity.contains(MEETS_STRONG_INTEGRITY);*/
   }
 
-  Future<bool> _checkAppIntegrity() async {
+  Future<bool> _checkAppIntegrity(HslSecurity hslSecurity) async {
+    if (hslSecurity.appIntegrity == false) return true;
     if (kDebugMode && !isTesting) {
       return true;
     }
@@ -254,13 +258,21 @@ class MethodChannelSecurityPluginHslPlatform
       return false;
     }
   }
-  Future<bool> _checkiOSSpecificSecurity() async {
-    bool jailbroken = await FlutterJailbreakDetection.jailbroken;
-    bool developerMode = await FlutterJailbreakDetection.developerMode; // android only.
-    _logDebug("FlutterJailbreakDetection: jailbroken $jailbroken");
-    _logDebug("FlutterJailbreakDetection: developerMode $developerMode");
-    return jailbroken;
+
+  Future<bool> _checkiOSSpecificSecurity(HslSecurity hslSecurity) async {
+    try {
+      if (hslSecurity.jailbreakCheck == false) return false;
+      bool jailbroken = await FlutterJailbreakDetection.jailbroken;
+      bool developerMode = await FlutterJailbreakDetection.developerMode; // android only.
+      _logDebug("FlutterJailbreakDetection: jailbroken $jailbroken");
+      _logDebug("FlutterJailbreakDetection: developerMode $developerMode");
+      return jailbroken;
+    } catch (e) {
+      _logError('Error checking if app is correctly installed', e);
+      return false;
+    }
   }
+
   Future<bool> _fridaOrMagiskDetected() async {
     try {
       final bool isAppIntegrity =
