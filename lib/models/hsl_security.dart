@@ -57,4 +57,19 @@ class HslSecurity {
       'exemptedHosts': exemptedHosts,
     };
   }
+
+  @override
+  String toString() {
+    return 'HslSecurity(rootCheck: $rootCheck, '
+        'playIntegrity: $playIntegrity, '
+        'appIntegrity: $appIntegrity, '
+        'jailbreakCheck: $jailbreakCheck, '
+        'secureScreen: $secureScreen, '
+        'sslPinning: $sslPinning, '
+        'emulatorCheck: $emulatorCheck, '
+        'fridaMagisk: $fridaMagisk, '
+        'keyLogger: $keyLogger, '
+        'exemptedHosts: ${exemptedHosts.join(", ")})';
+  }
+
 }
