@@ -23,7 +23,7 @@ class MethodChannelSecurityPluginHslPlatform
   @visibleForTesting
   final methodChannel = const MethodChannel('security_plugin_hsl_platform');
   List<String> secondaryMessage = [];
-  final isTesting = true;
+  bool isTesting = false;
   @override
   Future<String?> getPlatformVersion() async {
     final version =
@@ -35,6 +35,7 @@ class MethodChannelSecurityPluginHslPlatform
   Future<SecurityCheckResult> init(HslSecurity hslSecurity) async {
     bool isTampered = false;
     bool sslVerified = true;
+    isTesting = hslSecurity.isTesting;
     try {
       final results = await Future.wait([
         _checkNativeRootDetection(hslSecurity),
