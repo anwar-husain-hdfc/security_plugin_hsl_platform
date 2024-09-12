@@ -11,7 +11,7 @@ class HslSecurity {
   final bool fridaMagisk;
   final bool keyLogger;
   final List<String> exemptedHosts;
-  final isTesting = false;
+  bool isTesting = false;
 
   HslSecurity({
     required this.rootCheck,
