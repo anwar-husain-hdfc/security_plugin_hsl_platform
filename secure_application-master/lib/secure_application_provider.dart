@@ -19,13 +19,13 @@ class SecureApplicationProvider extends InheritedWidget {
       {bool listen = true}) {
     if (listen) {
       return context
-          .dependOnInheritedWidgetOfExactType<SecureApplicationProvider>()!
-          .secureData;
+          .dependOnInheritedWidgetOfExactType<SecureApplicationProvider>()
+          ?.secureData;
     } else {
       var widget = context
-          .getElementForInheritedWidgetOfExactType<SecureApplicationProvider>()!
-          .widget as SecureApplicationProvider;
-      return widget.secureData;
+          .getElementForInheritedWidgetOfExactType<SecureApplicationProvider>()
+          ?.widget as SecureApplicationProvider?;
+      return widget?.secureData;
     }
   }
 
