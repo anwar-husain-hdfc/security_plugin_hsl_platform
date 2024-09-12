@@ -126,7 +126,8 @@ class MethodChannelSecurityPluginHslPlatform
   }
 
   Future<bool> _checkNativeRootDetection(HslSecurity hslSecurity) async {
-    if (hslSecurity.rootCheck == false) return false;
+    if (Platform.isAndroid && hslSecurity.rootCheck == false) return false;
+    if (Platform.isIOS && hslSecurity.jailbreakCheck == false) return false;
     if (kDebugMode && !isTesting) {
       return false;
     }
@@ -190,11 +191,12 @@ class MethodChannelSecurityPluginHslPlatform
     }
 
     try {
-      final bool isRealDevice = await _isRealDevice();
+      final bool isRealDevice = hslSecurity.emulatorCheck ? await _isRealDevice() : true;
       final bool hasCorrectlyInstalled =
           Platform.isAndroid ? await _hasCorrectlyInstalled() : true;
-      final bool hasFridaOrMagiskDetected =
-          Platform.isAndroid ? await _fridaOrMagiskDetected() : false;
+      final bool hasFridaOrMagiskDetected = hslSecurity.fridaMagisk
+          ? Platform.isAndroid ? await _fridaOrMagiskDetected() : false
+          : false;
 
       // Check if the device is real
       if (!isRealDevice) {
