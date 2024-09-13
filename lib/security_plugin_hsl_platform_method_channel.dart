@@ -7,6 +7,7 @@ import 'package:flutter_security_checker/flutter_security_checker.dart';
 import 'package:security_plugin_hsl_platform/security_check_result.dart';
 import 'package:security_plugin_hsl_platform/security_utils/security_utils.dart';
 import 'package:security_plugin_hsl_platform/util/encrypt_pref.dart';
+import 'package:security_plugin_hsl_platform/util/internet_connectivity_util.dart';
 
 import 'device_security_status.dart';
 import 'models/hsl_security.dart';
@@ -153,7 +154,7 @@ class MethodChannelSecurityPluginHslPlatform
         if (playIntegrityRaw != null) {
           final List<String> playIntegrity =
               playIntegrityRaw.map((e) => e.toString()).toList();
-          isPlayIntegrityPassed = _isPlayIntegrity(playIntegrity);
+          isPlayIntegrityPassed = await _isPlayIntegrity(playIntegrity);
 
           // Check if Play Integrity check has passed
           if (!isPlayIntegrityPassed) {
@@ -176,7 +177,10 @@ class MethodChannelSecurityPluginHslPlatform
     }
   }
 
-  bool _isPlayIntegrity(List<String> playIntegrity) {
+  Future<bool> _isPlayIntegrity(List<String> playIntegrity) async {
+    var internetStatus = await InternetConnectivityUtil.internetStatus();
+    print("HSL_SECURITY:: internetStatus: $internetStatus");
+    if (internetStatus) return true;
     return playIntegrity.contains(MEETS_BASIC_INTEGRITY) ||
         playIntegrity.contains(MEETS_DEVICE_INTEGRITY);
 /*        &&

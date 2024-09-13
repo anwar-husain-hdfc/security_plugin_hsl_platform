@@ -21,6 +21,7 @@ dependencies:
   flutter_security_checker: ^2.0.0
 #  secure_application: ^4.0.1
   url_launcher: ^6.2.6
+  connectivity_plus: ^6.0.2
   package_info_plus: ^7.0.0
   secure_application:
     path: ./secure_application-master
