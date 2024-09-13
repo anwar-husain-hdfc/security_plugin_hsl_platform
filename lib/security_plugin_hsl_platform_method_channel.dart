@@ -179,7 +179,7 @@ class MethodChannelSecurityPluginHslPlatform
 
   Future<bool> _isPlayIntegrity(List<String> playIntegrity) async {
     var internetStatus = await InternetConnectivityUtil.internetStatus();
-    print("HSL_SECURITY:: internetStatus: $internetStatus");
+    _logDebug("HSL_SECURITY:: internetStatus: $internetStatus");
     if (internetStatus == false) return true;
     return playIntegrity.contains(MEETS_BASIC_INTEGRITY) ||
         playIntegrity.contains(MEETS_DEVICE_INTEGRITY);
