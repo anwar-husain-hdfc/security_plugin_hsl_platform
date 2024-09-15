@@ -7,7 +7,7 @@ class MaliciousAppAlertWidget extends StatelessWidget {
   final VoidCallback onOk;
   final bool isKeylogger;
 
-  MaliciousAppAlertWidget({
+  const MaliciousAppAlertWidget({super.key,
     required this.appName,
     required this.isKeylogger,
     required this.onOk,
@@ -31,7 +31,7 @@ class MaliciousAppAlertWidget extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
               'The application "$appName" has been identified as potentially malicious. It is strongly recommended to uninstall this application to protect your device.',
               style: Theme.of(context).textTheme.bodyMedium,

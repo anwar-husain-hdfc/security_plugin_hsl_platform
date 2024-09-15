@@ -9,11 +9,11 @@ import '../device_security_status.dart';
 import '../security_check_result.dart';
 
 class HslSecurityAlertWidget extends StatelessWidget {
-  static const TAG = 'HslSecurityAlertWidget';
+  static const tag = 'HslSecurityAlertWidget';
   final SecurityCheckResult? securityCheckResult;
   final HslSecurityThemeGlobal theme;
   final String packageName;
-  HslSecurityAlertWidget(this.packageName, {this.securityCheckResult, required this.theme});
+  const HslSecurityAlertWidget(this.packageName, {super.key, this.securityCheckResult, required this.theme});
 
   @override
   Widget build(BuildContext context) {
@@ -21,13 +21,13 @@ class HslSecurityAlertWidget extends StatelessWidget {
       isPartiallyAnimated: true,
       body: SafeArea(
         child: Container(
-          padding: EdgeInsets.all(10),
+          padding: const EdgeInsets.all(10),
           width: MediaQuery.of(context).size.width,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Spacer(),
+              const Spacer(),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -37,7 +37,7 @@ class HslSecurityAlertWidget extends StatelessWidget {
                     size: 100,
                     color: theme.APP_COLOR,
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 20,
                   ),
                   Text(
@@ -45,7 +45,7 @@ class HslSecurityAlertWidget extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineSmall,
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 10,
                   ),
                   Text(
@@ -138,7 +138,7 @@ class GradientScaffold extends StatelessWidget {
   final bool isPartiallyAnimated;
   final Widget body;
 
-  GradientScaffold({required this.isPartiallyAnimated, required this.body});
+  const GradientScaffold({super.key, required this.isPartiallyAnimated, required this.body});
 
   @override
   Widget build(BuildContext context) {
