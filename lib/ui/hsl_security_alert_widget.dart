@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
-import 'package:rounded_loading_button/rounded_loading_button.dart';
 import 'package:security_plugin_hsl_platform/ui/hsl_security_theme_global.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:flutter/material.dart';
@@ -13,8 +12,6 @@ class HslSecurityAlertWidget extends StatelessWidget {
   static const TAG = 'HslSecurityAlertWidget';
   final SecurityCheckResult? securityCheckResult;
   final HslSecurityThemeGlobal theme;
-  final RoundedLoadingButtonController _btnController =
-  RoundedLoadingButtonController();
   final String packageName;
   HslSecurityAlertWidget(this.packageName, {this.securityCheckResult, required this.theme});
 

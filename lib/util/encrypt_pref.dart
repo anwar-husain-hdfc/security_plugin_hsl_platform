@@ -1,357 +1,151 @@
-library encrypted_shared_preferences;
-
-
 import 'package:encrypt/encrypt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
-
 class HslSecurityEncryptedPref {
-  final String randomKeyKey = 'randomKey';
-  final String randomKeyListKey = 'randomKeyList';
-  final AESMode mode = AESMode.sic;
+  static const String _randomKeyKey = 'randomKey';
+  static const String _randomKeyListKey = 'randomKeyList';
+  static const AESMode _mode = AESMode.sic;
 
-  static SharedPreferences? prefs;
+  static late final SharedPreferences prefs;
   static HslSecurityEncryptedPref? _instance;
 
-  /// Optional: Pass custom SharedPreferences instance
-  /*HslSecurityEncryptedPref(
-    this.prefs, {this.mode = AESMode.sic,
-    this.randomKeyKey = 'randomKey',
-    this.randomKeyListKey = 'randomKeyList',
-  });*/
+  HslSecurityEncryptedPref._();
 
-  static Future<HslSecurityEncryptedPref?> getInstance() async {
-    if (prefs == null) {
-      prefs = await SharedPreferences.getInstance();
-    }
-
+  static Future<HslSecurityEncryptedPref> getInstance() async {
     if (_instance == null) {
-      _instance = HslSecurityEncryptedPref();
+      prefs = await SharedPreferences.getInstance();
+      _instance = HslSecurityEncryptedPref._();
     }
-    return _instance;
+    return _instance!;
   }
 
-  Encrypter _getEncrypter(SharedPreferences prefs) {
-    final String? randomKey = prefs.getString(randomKeyKey);
-
+  Encrypter _getEncrypter() {
+    final String? randomKey = prefs.getString(_randomKeyKey);
     Key key;
 
     if (randomKey == null) {
       key = Key.fromSecureRandom(32);
-      prefs.setString(randomKeyKey, key.base64);
+      prefs.setString(_randomKeyKey, key.base64);
     } else {
       key = Key.fromBase64(randomKey);
     }
 
-    return Encrypter(AES(key, mode: mode));
+    return Encrypter(AES(key, mode: _mode));
   }
 
-  Future<bool> setString(String key, String value) async {
+  Future<bool> _setEncryptedValue(String key, String value) async {
     try {
-      if (value.isNotEmpty) {
-        final Encrypter encrypter = _getEncrypter(prefs!);
-
-        /// Generate random IV
-        final IV iv = IV.fromSecureRandom(16);
-        final String ivValue = iv.base64;
-
-        /// Encrypt value
-        final Encrypted encrypted = encrypter.encrypt(value, iv: iv);
-        final String encryptedValue = encrypted.base64;
-
-        /// Add generated random IV to a list
-        final List<String> randomKeyList =
-            prefs!.getStringList(randomKeyListKey) ?? <String>[];
-        randomKeyList.add(ivValue);
-        prefs!.setStringList(randomKeyListKey, randomKeyList);
-
-        /// Save random key list index, We used encrypted value as key so we could use that to access it later
-        final int index = randomKeyList.length - 1;
-        prefs!.setString(encryptedValue, index.toString());
-
-        /// Save encrypted value
-        return prefs!.setString(key, encryptedValue);
-      }
-
-      /// Value is empty
-      return false;
-    } catch (e, s) {
-      // debugPrint('HslSecurityEncryptedPref.setString', e, stackTraces: s);
-      return false;
-    }
-  }
-
-  String getString(String key) {
-    try {
-      String decrypted = '';
-
-      /// Get encrypted value
-      final String? encryptedValue = prefs!.getString(key);
-
-      if (encryptedValue != null) {
-        /// Get random key list index using the encrypted value as key
-        final String indexString = prefs!.getString(encryptedValue)!;
-        final int index = int.tryParse(indexString) ?? 0;
-
-        /// Get random key from random key list using the index
-        final List<String> randomKeyList = prefs!.getStringList(randomKeyListKey)!;
-        final String ivValue = randomKeyList[index];
-
-        final Encrypter encrypter = _getEncrypter(prefs!);
-
-        final IV iv = IV.fromBase64(ivValue);
-        final Encrypted encrypted = Encrypted.fromBase64(encryptedValue);
-
-        decrypted = encrypter.decrypt(encrypted, iv: iv);
-      }
-
-      return decrypted;
-    } catch (e, s) {
-      // logger.error('HslSecurityEncryptedPref.getString', e, stackTraces: s);
-      return '';
-    }
-  }
-
-  Future<bool> setBool(String key, bool value) async {
-    try {
-      final Encrypter encrypter = _getEncrypter(prefs!);
-
-      /// Generate random IV
+      final Encrypter encrypter = _getEncrypter();
       final IV iv = IV.fromSecureRandom(16);
       final String ivValue = iv.base64;
 
-      /// Encrypt value
-      final Encrypted encrypted = encrypter.encrypt(value.toString(), iv: iv);
+      final Encrypted encrypted = encrypter.encrypt(value, iv: iv);
       final String encryptedValue = encrypted.base64;
 
-      /// Add generated random IV to a list
-      final List<String> randomKeyList =
-          prefs!.getStringList(randomKeyListKey) ?? <String>[];
+      final List<String> randomKeyList = prefs.getStringList(_randomKeyListKey) ?? <String>[];
       randomKeyList.add(ivValue);
-      await prefs!.setStringList(randomKeyListKey, randomKeyList);
+      await prefs.setStringList(_randomKeyListKey, randomKeyList);
 
-      /// Save random key list index, We used encrypted value as key so we could use that to access it later
       final int index = randomKeyList.length - 1;
-      await prefs!.setString(encryptedValue, index.toString());
+      await prefs.setString(encryptedValue, index.toString());
 
-      /// Save encrypted value
-      return await prefs!.setString(key, encryptedValue);
-    } catch (e, s) {
-      // logger.error('HslSecurityEncryptedPref.setBool', e, stackTraces: s);
+      return await prefs.setString(key, encryptedValue);
+    } catch (e) {
+      // Log or handle the error appropriately
       return false;
     }
   }
 
-  bool? getBool(String key) {
+  String? _getDecryptedValue(String key) {
     try {
-      String decrypted = '';
-
-      /// Get encrypted value
-      //m.debugPrint('==============${prefs.getBool(key)}============');
-      final String? encryptedValue = prefs!.getString(key);
-
+      final String? encryptedValue = prefs.getString(key);
       if (encryptedValue != null) {
-        /// Get random key list index using the encrypted value as key
-        final String indexString = prefs!.getString(encryptedValue)!;
-        final int index = int.tryParse(indexString) ?? 0;
+        final String indexString = prefs.getString(encryptedValue) ?? '';
+        final int index = int.tryParse(indexString) ?? -1;
 
-        /// Get random key from random key list using the index
-        final List<String> randomKeyList = prefs!.getStringList(randomKeyListKey) ?? <String>[];
-        final String? ivValue = randomKeyList.length > index ? randomKeyList[index] : null;
+        final List<String> randomKeyList = prefs.getStringList(_randomKeyListKey) ?? [];
+        if (index >= 0 && index < randomKeyList.length) {
+          final String ivValue = randomKeyList[index];
+          final Encrypter encrypter = _getEncrypter();
 
-        final Encrypter encrypter = _getEncrypter(prefs!);
-        if(ivValue == null){
-        // logger.warn('HslSecurityEncryptedPref.getBool', 'ivValue is null');
-          return false;
+          final IV iv = IV.fromBase64(ivValue);
+          final Encrypted encrypted = Encrypted.fromBase64(encryptedValue);
+
+          return encrypter.decrypt(encrypted, iv: iv);
         }
-        final IV iv = IV.fromBase64(ivValue);
-        final Encrypted encrypted = Encrypted.fromBase64(encryptedValue);
-
-        decrypted = encrypter.decrypt(encrypted, iv: iv);
       }
-
-      return decrypted == 'true';
-    } catch (e, s) {
-    // logger.error('HslSecurityEncryptedPref.getBool', e, stackTraces: s);
-      return false;
+      return null;
+    } catch (e) {
+      // Log or handle the error appropriately
+      return null;
     }
   }
 
-  Future<bool> setInt(String key, int? value) async {
-    try {
-      if (value != null) {
-        final Encrypter encrypter = _getEncrypter(prefs!);
+  Future<bool> setString(String key, String value) async {
+    return await _setEncryptedValue(key, value);
+  }
 
-        /// Generate random IV
-        final IV iv = IV.fromSecureRandom(16);
-        final String ivValue = iv.base64;
+  String getString(String key) {
+    return _getDecryptedValue(key) ?? '';
+  }
 
-        /// Encrypt value
-        final Encrypted encrypted = encrypter.encrypt(value.toString(), iv: iv);
-        final String encryptedValue = encrypted.base64;
+  Future<bool> setBool(String key, bool value) async {
+    return await _setEncryptedValue(key, value.toString());
+  }
 
-        /// Add generated random IV to a list
-        final List<String> randomKeyList =
-            prefs!.getStringList(randomKeyListKey) ?? <String>[];
-        randomKeyList.add(ivValue);
-        await prefs!.setStringList(randomKeyListKey, randomKeyList);
+  bool getBool(String key) {
+    return _getDecryptedValue(key) == 'true';
+  }
 
-        /// Save random key list index, We used encrypted value as key so we could use that to access it later
-        final int index = randomKeyList.length - 1;
-        await prefs!.setString(encryptedValue, index.toString());
-
-        /// Save encrypted value
-        return await prefs!.setString(key, encryptedValue);
-      }
-
-      /// Value is empty
-      return false;
-    } catch (e, s) {
-    // logger.error('HslSecurityEncryptedPref.setInt', e, stackTraces: s);
-      return false;
-    }
+  Future<bool> setInt(String key, int value) async {
+    return await _setEncryptedValue(key, value.toString());
   }
 
   int getInt(String key) {
-    try {
-      String decrypted = '';
-
-      /// Get encrypted value
-      final String? encryptedValue = prefs!.getString(key);
-
-      if (encryptedValue != null) {
-        /// Get random key list index using the encrypted value as key
-        final String indexString = prefs!.getString(encryptedValue)!;
-        final int index = int.tryParse(indexString) ?? 0;
-
-        /// Get random key from random key list using the index
-        final List<String> randomKeyList = prefs!.getStringList(randomKeyListKey)!;
-        final String ivValue = randomKeyList[index];
-
-        final Encrypter encrypter = _getEncrypter(prefs!);
-
-        final IV iv = IV.fromBase64(ivValue);
-        final Encrypted encrypted = Encrypted.fromBase64(encryptedValue);
-
-        decrypted = encrypter.decrypt(encrypted, iv: iv);
-      }
-      return int.tryParse(decrypted) ?? 0;
-    }  catch (e, s) {
-    // logger.error('HslSecurityEncryptedPref.getInt', e, stackTraces: s);
-      return 0;
-    }
+    return int.tryParse(_getDecryptedValue(key) ?? '0') ?? 0;
   }
 
   Future<bool> setStringList(String key, List<String> value) async {
-    try {
-      if (value.isNotEmpty) {
-        final Encrypter encrypter = _getEncrypter(prefs!);
-
-        /// Generate random IV
-        final IV iv = IV.fromSecureRandom(16);
-        final String ivValue = iv.base64;
-
-        /// Encrypt value
-        final Encrypted encrypted =
-        encrypter.encrypt(value.join('<PrefStringListDelimiter>'), iv: iv);
-        final String encryptedValue = encrypted.base64;
-
-        /// Add generated random IV to a list
-        final List<String> randomKeyList =
-            prefs!.getStringList(randomKeyListKey) ?? <String>[];
-        randomKeyList.add(ivValue);
-        await prefs!.setStringList(randomKeyListKey, randomKeyList);
-
-        /// Save random key list index, We used encrypted value as key so we could use that to access it later
-        final int index = randomKeyList.length - 1;
-        await prefs!.setString(encryptedValue, index.toString());
-
-        /// Save encrypted value
-        return await prefs!.setString(key, encryptedValue);
-      }
-
-      /// Value is empty
-      return false;
-    } catch (e, s) {
-    // logger.error('HslSecurityEncryptedPref.setStringList', e, stackTraces: s);
-      return false;
-    }
+    final String joinedValue = value.join('<PrefStringListDelimiter>');
+    return await _setEncryptedValue(key, joinedValue);
   }
 
   List<String> getStringList(String key) {
-    try{
-      String decrypted = '';
-
-      /// Get encrypted value
-      final String? encryptedValue = prefs!.getString(key);
-
-      if (encryptedValue != null) {
-        /// Get random key list index using the encrypted value as key
-        final String indexString = prefs!.getString(encryptedValue)!;
-        final int index = int.tryParse(indexString) ?? 0;
-
-        /// Get random key from random key list using the index
-        final List<String> randomKeyList = prefs!.getStringList(randomKeyListKey)!;
-        final String ivValue = randomKeyList[index];
-
-        final Encrypter encrypter = _getEncrypter(prefs!);
-
-        final IV iv = IV.fromBase64(ivValue);
-        final Encrypted encrypted = Encrypted.fromBase64(encryptedValue);
-
-        decrypted = encrypter.decrypt(encrypted, iv: iv);
-      }
-
-      return decrypted.isEmpty
-          ? []
-          : decrypted.split('<PrefStringListDelimiter>');
-    } catch (e, s) {
-    // logger.error('HslSecurityEncryptedPref.getStringList', e, stackTraces: s);
-      return [];
-    }
+    final String? decryptedValue = _getDecryptedValue(key);
+    return decryptedValue?.split('<PrefStringListDelimiter>') ?? [];
   }
 
   bool containsKey(String key) {
-    /// Get encrypted value
-    final String? encryptedValue = prefs!.getString(key);
-
-    return encryptedValue != null;
+    return prefs.containsKey(key);
   }
 
   Future<bool> remove(String key) async {
     try {
-      /// Get encrypted value
-      final String? encryptedValue = prefs!.getString(key);
-
+      final String? encryptedValue = prefs.getString(key);
       if (encryptedValue != null) {
-        await prefs!.remove(key);
+        await prefs.remove(key);
+        final String indexString = prefs.getString(encryptedValue) ?? '';
+        final int index = int.tryParse(indexString) ?? -1;
 
-        /// Get random key list index using the encrypted value as key
-        final String indexString = prefs!.getString(encryptedValue)!;
-        final int index = int.tryParse(indexString) ?? 0;
-
-        await prefs!.remove(encryptedValue);
-
-        final List<String> randomKeyList = prefs!.getStringList(randomKeyListKey)!;
-        randomKeyList.removeAt(index);
-        return await prefs!.setStringList(randomKeyListKey, randomKeyList);
+        final List<String> randomKeyList = prefs.getStringList(_randomKeyListKey) ?? [];
+        if (index >= 0 && index < randomKeyList.length) {
+          randomKeyList.removeAt(index);
+          await prefs.setStringList(_randomKeyListKey, randomKeyList);
+        }
+        return true;
       }
-
       return false;
-    } catch (e, s) {
-    // logger.error('HslSecurityEncryptedPref.remove', e, stackTraces: s);
+    } catch (e) {
+      // Log or handle the error appropriately
       return false;
     }
   }
 
   Future<bool> clear() async {
-    /// Clear values
-    return await prefs!.clear();
+    return await prefs.clear();
   }
 
   Future<void> reload() async {
-    /// Reload
-    return await prefs!.reload();
+    return await prefs.reload();
   }
 }
