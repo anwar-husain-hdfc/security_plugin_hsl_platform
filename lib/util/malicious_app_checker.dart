@@ -88,12 +88,12 @@ class MaliciousAppChecker {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(_errorTitle),
-          content: Text(_errorContent),
+          title: const Text(_errorTitle),
+          content: const Text(_errorContent),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(_okButtonText),
+              child: const Text(_okButtonText),
             ),
           ],
         );
