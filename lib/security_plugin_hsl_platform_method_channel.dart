@@ -56,13 +56,6 @@ class MethodChannelSecurityPluginHslPlatform
 
       final bool rooted = checkRootFlutterSc || nativeRootCheck || jailbroken;
 
-/*    final bool nativeRootCheck = await _checkNativeRootDetection();
-    _logDebug("nativeRootCheck - $nativeRootCheck");
-    final bool checkRootFlutterSc = await _checkRoot();
-    _logDebug("checkRootFlutterSc - $checkRootFlutterSc");
-    final bool rooted = checkRootFlutterSc || nativeRootCheck;
-    final bool isAppVerified = await _checkAppIntegrity();*/
-
     if (rooted) {
       _logDebug("device is rooted");
     }
@@ -147,10 +140,6 @@ class MethodChannelSecurityPluginHslPlatform
       _logDebug("_checkNativeRootDetection isRooted- $isRooted");
       if (Platform.isAndroid) {
         playIntegrityRaw = results[1] as List<dynamic>?;
-        // Fetch Play Integrity data with null safety
-        // final List<dynamic>? playIntegrityRaw =
-        //     await methodChannel.invokeMethod<List<dynamic>>('play_integrity');
-        // Handle potential null values explicitly
         if (playIntegrityRaw != null) {
           final List<String> playIntegrity =
               playIntegrityRaw.map((e) => e.toString()).toList();
@@ -183,9 +172,6 @@ class MethodChannelSecurityPluginHslPlatform
     if (internetStatus == false) return true;
     return playIntegrity.contains(MEETS_BASIC_INTEGRITY) ||
         playIntegrity.contains(MEETS_DEVICE_INTEGRITY);
-/*        &&
-        playIntegrity.contains(MEETS_DEVICE_INTEGRITY) &&
-        playIntegrity.contains(MEETS_STRONG_INTEGRITY);*/
   }
 
   Future<bool> _checkAppIntegrity(HslSecurity hslSecurity) async {
