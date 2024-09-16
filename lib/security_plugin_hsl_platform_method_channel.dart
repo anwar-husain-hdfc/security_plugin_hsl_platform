@@ -112,11 +112,15 @@ class MethodChannelSecurityPluginHslPlatform
   }
 
   Future<bool> _checkRoot(HslSecurity hslSecurity) async {
-    if (hslSecurity.rootCheck == false) return false;
-    if (kDebugMode && !isTesting) {
+    try {
+      if (hslSecurity.rootCheck == false) return false;
+      if (kDebugMode && !isTesting) {
+        return false;
+      }
+      return FlutterSecurityChecker.isRooted;
+    } catch (e) {
       return false;
     }
-    return FlutterSecurityChecker.isRooted;
   }
 
   Future<bool> _checkNativeRootDetection(HslSecurity hslSecurity) async {
@@ -167,11 +171,15 @@ class MethodChannelSecurityPluginHslPlatform
   }
 
   Future<bool> _isPlayIntegrity(List<String> playIntegrity) async {
+    try {
     var internetStatus = await InternetConnectivityUtil.internetStatus();
     _logDebug("HSL_SECURITY:: internetStatus: $internetStatus");
     if (internetStatus == false) return true;
     return playIntegrity.contains(MEETS_BASIC_INTEGRITY) ||
         playIntegrity.contains(MEETS_DEVICE_INTEGRITY);
+    } catch (e) {
+      return true;
+    }
   }
 
   Future<bool> _checkAppIntegrity(HslSecurity hslSecurity) async {
