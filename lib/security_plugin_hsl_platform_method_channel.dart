@@ -147,7 +147,7 @@ class MethodChannelSecurityPluginHslPlatform
         if (playIntegrityRaw != null) {
           final List<String> playIntegrity =
               playIntegrityRaw.map((e) => e.toString()).toList();
-          isPlayIntegrityPassed = await _isPlayIntegrity(playIntegrity);
+          isPlayIntegrityPassed = await _isPlayIntegrity(playIntegrity, hslSecurity.playIntegrity);
 
           // Check if Play Integrity check has passed
           if (!isPlayIntegrityPassed) {
@@ -170,7 +170,8 @@ class MethodChannelSecurityPluginHslPlatform
     }
   }
 
-  Future<bool> _isPlayIntegrity(List<String> playIntegrity) async {
+  Future<bool> _isPlayIntegrity(List<String> playIntegrity, bool isPlayIntegrityEnabled) async {
+    if (isPlayIntegrityEnabled == false) return true;
     try {
     var internetStatus = await InternetConnectivityUtil.internetStatus();
     _logDebug("HSL_SECURITY:: internetStatus: $internetStatus");
@@ -261,6 +262,7 @@ class MethodChannelSecurityPluginHslPlatform
   }
 
   Future<bool> _checkiOSSpecificSecurity(HslSecurity hslSecurity) async {
+    if (Platform.isIOS == false) return false;
     try {
       if (hslSecurity.jailbreakCheck == false) return false;
       bool jailbroken = await FlutterJailbreakDetection.jailbroken;
