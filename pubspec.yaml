@@ -17,7 +17,7 @@ dependencies:
   encrypt: ^5.0.3
   shared_preferences: ^2.2.3
   device_apps: ^2.2.0
-  flutter_security_checker: ^2.0.0
+  flutter_security_checker: ^3.0.0
   secure_application: ^4.0.1
   url_launcher: ^6.2.6
   connectivity_plus: ^6.0.2
