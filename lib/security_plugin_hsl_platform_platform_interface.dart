@@ -28,6 +28,9 @@ abstract class SecurityPluginHslPlatformPlatform extends PlatformInterface {
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
+  Future<bool?> checkPlayIntegrity(HslSecurity hslSecurity) {
+    throw UnimplementedError('platformVersion() has not been implemented.');
+  }
   Future<SecurityCheckResult> init(HslSecurity hslSecurity) {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }

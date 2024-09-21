@@ -31,6 +31,11 @@ class MethodChannelSecurityPluginHslPlatform
         await methodChannel.invokeMethod<String>('getPlatformVersion');
     return version;
   }
+  @override
+  Future<bool?> checkPlayIntegrity(HslSecurity hslSecurity) async {
+    final isPlayIntegrityPassed = await _extractAndCheckPlayIntegrity(hslSecurity);
+    return isPlayIntegrityPassed;
+  }
 
   @override
   Future<SecurityCheckResult> init(HslSecurity hslSecurity) async {
@@ -287,6 +292,38 @@ class MethodChannelSecurityPluginHslPlatform
     } catch (e) {
       _logError('Error detecting Frida or Magisk', e);
       return false;
+    }
+  }
+
+  Future<bool> _extractAndCheckPlayIntegrity(HslSecurity hslSecurity) async {
+    try {
+      _logDebug("_extractAndCheckPlayIntegrity called");
+      if (!Platform.isAndroid) {
+        _logDebug("Skipping play integrity check on non-Android platform.");
+        return true; // Returning true for non-Android platforms
+      }
+
+      List<dynamic>? playIntegrityRaw = await methodChannel.invokeMethod<List<dynamic>>('play_integrity');
+      if (playIntegrityRaw != null) {
+        final List<String> playIntegrity = playIntegrityRaw.map((e) => e.toString()).toList();
+        _logDebug("PlayIntegrity List - $playIntegrity");
+
+        final bool isPlayIntegrityPassed = await _isPlayIntegrity(playIntegrity, hslSecurity.playIntegrity);
+        _logDebug("isPlayIntegrityPassed - $isPlayIntegrityPassed");
+
+        // if (!isPlayIntegrityPassed) {
+        //   secondaryMessage.add(
+        //       "Warning: Play Integrity Check Failed - The application did not pass the Play Integrity check. This may indicate a compromised or unverified environment.");
+        // }
+
+        return isPlayIntegrityPassed;
+      } else {
+        _logDebug("PlayIntegrity check returned null.");
+        return true; // Returning true if the check returned null
+      }
+    } catch (e, stackTrace) {
+      _logError('Error checking play integrity', e, stackTrace);
+      return true; // Assuming Play Integrity check passed if there's an error
     }
   }
 

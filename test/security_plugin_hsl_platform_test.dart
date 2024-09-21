@@ -18,6 +18,12 @@ class MockSecurityPluginHslPlatformPlatform
     // TODO: implement init
     throw UnimplementedError();
   }
+
+  @override
+  Future<bool?> checkPlayIntegrity(HslSecurity hslSecurity) {
+    // TODO: implement checkPlayIntegrity
+    throw UnimplementedError();
+  }
 }
 
 void main() {

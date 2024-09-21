@@ -8,6 +8,9 @@ class SecurityPluginHslPlatform {
   Future<String?> getPlatformVersion() {
     return SecurityPluginHslPlatformPlatform.instance.getPlatformVersion();
   }
+  Future<bool?> checkPlayIntegrity(HslSecurity hslSecurity) {
+    return SecurityPluginHslPlatformPlatform.instance.checkPlayIntegrity(hslSecurity);
+  }
   Future<SecurityCheckResult> init(HslSecurity hslSecurity) {
     return SecurityPluginHslPlatformPlatform.instance.init(hslSecurity);
   }
