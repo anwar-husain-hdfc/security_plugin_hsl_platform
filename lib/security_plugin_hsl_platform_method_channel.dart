@@ -136,38 +136,9 @@ class MethodChannelSecurityPluginHslPlatform
     }
 
     try {
-      // final bool isRooted = await methodChannel.invokeMethod<bool>('root_detection') ?? false;
-      final bool isRooted;
-      List<dynamic>? playIntegrityRaw;
-      bool isPlayIntegrityPassed = true; // Default to true or handle as needed for non-Android
-      final results = await Future.wait([
-        methodChannel.invokeMethod<bool>('root_detection'),
-        if (Platform.isAndroid) methodChannel.invokeMethod<List<dynamic>>('play_integrity'),
-      ]);
-      // Extract results
-      isRooted = results[0] as bool? ?? false;
+      final bool isRooted = await methodChannel.invokeMethod<bool>('root_detection') ?? false;
+      bool isPlayIntegrityPassed = await _extractAndCheckPlayIntegrity(hslSecurity); // Default to true or handle as needed for non-Android
       _logDebug("_checkNativeRootDetection isRooted- $isRooted");
-      if (Platform.isAndroid) {
-        playIntegrityRaw = results[1] as List<dynamic>?;
-        if (playIntegrityRaw != null) {
-          final List<String> playIntegrity =
-              playIntegrityRaw.map((e) => e.toString()).toList();
-          isPlayIntegrityPassed = await _isPlayIntegrity(playIntegrity, hslSecurity.playIntegrity);
-
-          // Check if Play Integrity check has passed
-          if (!isPlayIntegrityPassed) {
-            secondaryMessage.add(
-                "Warning: Play Integrity Check Failed - The application did not pass the Play Integrity check. This may indicate a compromised or unverified environment.");
-          }
-
-          _logDebug("PlayIntegrity List - $playIntegrity");
-          _logDebug("isPlayIntegrityPassed - $isPlayIntegrityPassed");
-        } else {
-          _logDebug("PlayIntegrity check returned null.");
-        }
-      } else {
-        _logDebug("Skipping play integrity check on non-Android platform.");
-      }
       return isRooted || !isPlayIntegrityPassed;
     } catch (e, stackTrace) {
       _logError('Error checking native root detection', e, stackTrace);
@@ -178,11 +149,8 @@ class MethodChannelSecurityPluginHslPlatform
   Future<bool> _isPlayIntegrity(List<String> playIntegrity, bool isPlayIntegrityEnabled) async {
     if (isPlayIntegrityEnabled == false) return true;
     try {
-    var internetStatus = await InternetConnectivityUtil.internetStatus();
-    _logDebug("HSL_SECURITY:: internetStatus: $internetStatus");
-    if (internetStatus == false) return true;
-    return playIntegrity.contains(MEETS_BASIC_INTEGRITY) ||
-        playIntegrity.contains(MEETS_DEVICE_INTEGRITY);
+      return playIntegrity.contains(MEETS_BASIC_INTEGRITY) ||
+          playIntegrity.contains(MEETS_DEVICE_INTEGRITY);
     } catch (e) {
       return true;
     }
@@ -297,6 +265,14 @@ class MethodChannelSecurityPluginHslPlatform
 
   Future<bool> _extractAndCheckPlayIntegrity(HslSecurity hslSecurity) async {
     try {
+      // Check for internet connectivity before performing the Play Integrity check
+      var internetStatus = await InternetConnectivityUtil.internetStatus();
+      _logDebug("HSL_SECURITY:: internetStatus: $internetStatus");
+      // If there is no internet connection, bypass the Play Integrity check
+      if (!internetStatus) {
+        _logDebug("No internet connection. Skipping Play Integrity check.");
+        return true;
+      }
       _logDebug("_extractAndCheckPlayIntegrity called");
       if (!Platform.isAndroid) {
         _logDebug("Skipping play integrity check on non-Android platform.");
@@ -311,10 +287,10 @@ class MethodChannelSecurityPluginHslPlatform
         final bool isPlayIntegrityPassed = await _isPlayIntegrity(playIntegrity, hslSecurity.playIntegrity);
         _logDebug("isPlayIntegrityPassed - $isPlayIntegrityPassed");
 
-        // if (!isPlayIntegrityPassed) {
-        //   secondaryMessage.add(
-        //       "Warning: Play Integrity Check Failed - The application did not pass the Play Integrity check. This may indicate a compromised or unverified environment.");
-        // }
+        if (!isPlayIntegrityPassed) {
+          secondaryMessage.add(
+              "Warning: Play Integrity Check Failed - The application did not pass the Play Integrity check. This may indicate a compromised or unverified environment.");
+        }
 
         return isPlayIntegrityPassed;
       } else {
