@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:security_plugin_hsl_platform/models/hsl_security.dart';
+import 'package:security_plugin_hsl_platform/models/play_integrity_status.dart';
 import 'package:security_plugin_hsl_platform/security_check_result.dart';
 import 'package:security_plugin_hsl_platform/security_plugin_hsl_platform.dart';
 import 'package:security_plugin_hsl_platform/security_plugin_hsl_platform_platform_interface.dart';
@@ -20,7 +21,7 @@ class MockSecurityPluginHslPlatformPlatform
   }
 
   @override
-  Future<bool?> checkPlayIntegrity(HslSecurity hslSecurity) {
+  Future<PlayIntegrityStatus?> checkPlayIntegrity(HslSecurity hslSecurity) {
     // TODO: implement checkPlayIntegrity
     throw UnimplementedError();
   }

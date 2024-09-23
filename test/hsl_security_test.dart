@@ -62,6 +62,7 @@ void main() {
         emulatorCheck: false,
         fridaMagisk: true,
         keyLogger: false,
+        playIntegrityHome: true,
         exemptedHosts: ['example.com', 'test.com'],
       );
 
@@ -90,6 +91,7 @@ void main() {
         emulatorCheck: false,
         fridaMagisk: true,
         keyLogger: false,
+        playIntegrityHome: true,
         exemptedHosts: ['example.com'],
       );
 
@@ -151,6 +153,7 @@ void main() {
         emulatorCheck: false,
         fridaMagisk: false,
         keyLogger: false,
+        playIntegrityHome: true,
         exemptedHosts: [],
       );
 
@@ -170,6 +173,7 @@ void main() {
         emulatorCheck: false,
         fridaMagisk: false,
         keyLogger: false,
+        playIntegrityHome: true,
         exemptedHosts: [],
       );
 
@@ -206,6 +210,7 @@ void main() {
         emulatorCheck: false,
         fridaMagisk: false,
         keyLogger: false,
+        playIntegrityHome: true,
         exemptedHosts: exemptedHosts,
       );
 

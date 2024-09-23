@@ -55,7 +55,11 @@ class SecurityPluginHslPlatformPlugin: FlutterPlugin, MethodCallHandler {
         }
 
         override fun onError(throwable: Throwable) {
-          result.success(arrayListOf<String>())
+          val playIntegrityList = arrayListOf<String>()
+          if (throwable.message?.contains("Network error") == true || throwable.message?.contains("-3") == true) {
+            playIntegrityList.add("NETWORK_ERROR")
+          }
+          result.success(playIntegrityList)
         }
       })
     } else if (call.method == SHA_DETECTION) {

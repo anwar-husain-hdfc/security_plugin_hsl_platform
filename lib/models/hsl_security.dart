@@ -10,6 +10,7 @@ class HslSecurity {
   final bool emulatorCheck;
   final bool fridaMagisk;
   final bool keyLogger;
+  final bool playIntegrityHome;
   final List<String> exemptedHosts;
   bool isTesting = false;
 
@@ -23,6 +24,7 @@ class HslSecurity {
     required this.emulatorCheck,
     required this.fridaMagisk,
     required this.keyLogger,
+    required this.playIntegrityHome,
     required this.exemptedHosts,
   });
 
@@ -38,6 +40,7 @@ class HslSecurity {
       emulatorCheck: json['emulatorCheck'] ?? false,
       fridaMagisk: json['fridaMagisk'] ?? false,
       keyLogger: json['keyLogger'] ?? false,
+      playIntegrityHome: json['playIntegrityHome'] ?? false,
       exemptedHosts: List<String>.from(json['exemptedHosts'] ?? []),
     );
   }
@@ -54,6 +57,7 @@ class HslSecurity {
       'emulatorCheck': emulatorCheck,
       'fridaMagisk': fridaMagisk,
       'keyLogger': keyLogger,
+      'playIntegrityHome': playIntegrityHome,
       'exemptedHosts': exemptedHosts,
     };
   }
@@ -69,6 +73,7 @@ class HslSecurity {
         'emulatorCheck: $emulatorCheck, '
         'fridaMagisk: $fridaMagisk, '
         'keyLogger: $keyLogger, '
+        'playIntegrityHome: $playIntegrityHome, '
         'exemptedHosts: ${exemptedHosts.join(", ")})';
   }
 

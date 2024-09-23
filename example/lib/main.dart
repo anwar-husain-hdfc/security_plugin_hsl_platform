@@ -81,6 +81,7 @@ class _MyAppState extends State<MyApp> {
               emulatorCheck: true,
               fridaMagisk: true,
               keyLogger: true,
+              playIntegrityHome: true,
               exemptedHosts: []));
       final securityStatus = checkResult.status;
       debugPrint('HSL_SECURITY: DeviceSecurityStatus ${securityStatus.name}');
