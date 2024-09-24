@@ -50,7 +50,7 @@ class SecurityPluginHslPlatformPlugin: FlutterPlugin, MethodCallHandler {
       IntegrityAPIProvider.getInstance(applicationContext).initiateIntegrityDetection(object :
         OnIntegrityProviderCallback {
         override fun onSuccess(verdict: ArrayList<String>) {
-          handleHardwareBackedAttestation(verdict)
+//          handleHardwareBackedAttestation(verdict)
           result.success(verdict)
         }
 
