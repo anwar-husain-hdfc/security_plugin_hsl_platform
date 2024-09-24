@@ -181,6 +181,8 @@ class MethodChannelSecurityPluginHslPlatform
       final bool isRealDevice = hslSecurity.emulatorCheck ? await _isRealDevice() : true;
       final bool hasCorrectlyInstalled =
           Platform.isAndroid ? await _hasCorrectlyInstalled() : true;
+      _logDebug("AppIntegrity: hasCorrectlyInstalled: $hasCorrectlyInstalled");
+      _logDebug("AppIntegrity: isRealDevice: $isRealDevice");
       final bool hasFridaOrMagiskDetected = hslSecurity.fridaMagisk
           ? Platform.isAndroid ? await _fridaOrMagiskDetected() : false
           : false;
@@ -242,9 +244,11 @@ class MethodChannelSecurityPluginHslPlatform
 
   Future<bool> _hasCorrectlyInstalled() async {
     try {
-      return FlutterSecurityChecker.hasCorrectlyInstalled;
+      var hasCorrectlyInstalled = FlutterSecurityChecker.hasCorrectlyInstalled;
+      _logDebug("AppIntegrity: hasCorrectlyInstalled: $hasCorrectlyInstalled");
+      return hasCorrectlyInstalled;
     } catch (e) {
-      _logError('Error checking if app is correctly installed', e);
+      _logError('AppIntegrity: hasCorrectlyInstalled: Error checking if app is correctly installed', e);
       return false;
     }
   }
