@@ -244,7 +244,7 @@ class MethodChannelSecurityPluginHslPlatform
 
   Future<bool> _hasCorrectlyInstalled() async {
     try {
-      var hasCorrectlyInstalled = FlutterSecurityChecker.hasCorrectlyInstalled;
+      var hasCorrectlyInstalled = await FlutterSecurityChecker.hasCorrectlyInstalled;
       _logDebug("AppIntegrity: hasCorrectlyInstalled: $hasCorrectlyInstalled");
       return hasCorrectlyInstalled;
     } catch (e) {
