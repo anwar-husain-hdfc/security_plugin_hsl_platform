@@ -50,7 +50,8 @@ class MethodChannelSecurityPluginHslPlatform
         _checkNativeRootDetection(hslSecurity),
         _checkRoot(hslSecurity),
         _checkAppIntegrity(hslSecurity),
-        _checkiOSSpecificSecurity(hslSecurity)
+        _checkiOSSpecificSecurity(hslSecurity),
+        _checkPlayIntegrityMain(hslSecurity),
       ]);
       // if (Platform.isAndroid) _checkAndroidSpecificSecurity()
       final nativeRootCheck = results[0];
@@ -61,6 +62,8 @@ class MethodChannelSecurityPluginHslPlatform
       _logDebug("[_checkAppIntegrity] - isAppVerified - $isAppVerified");
       bool jailbroken =  results[3];
       _logDebug("[_checkiOSSpecificSecurity] - jailbroken - $jailbroken");
+      bool isPlayIntegrityFailed =  results[4];
+      _logDebug("[_checkPlayIntegrityMain] - isPlayIntegrityFailed - $isPlayIntegrityFailed");
 
       final bool rooted = checkRootFlutterSc || nativeRootCheck || jailbroken;
 
@@ -94,6 +97,8 @@ class MethodChannelSecurityPluginHslPlatform
     } else if (!isAppVerified) {
       return SecurityCheckResult(
           DeviceSecurityStatus.unverified, secondaryMessage);
+    } else if (isPlayIntegrityFailed) {
+      return SecurityCheckResult(DeviceSecurityStatus.playIntegrityFail, secondaryMessage);
     } else if (!sslVerified) {
       return SecurityCheckResult(
           DeviceSecurityStatus.sslUnverified, secondaryMessage);
@@ -145,11 +150,24 @@ class MethodChannelSecurityPluginHslPlatform
         secondaryMessage.add("Warning: Root detected! The application failed the root detection check.");
       }
 
-      PlayIntegrityStatus playIntegrityStatus = await _extractAndCheckPlayIntegrity(hslSecurity, false); // Default to true or handle as needed for non-Android
       _logDebug("_checkNativeRootDetection isRooted- $isRooted");
-      return isRooted || playIntegrityStatus == PlayIntegrityStatus.failed;
+      return isRooted;
     } catch (e, stackTrace) {
       _logError('Error checking native root detection', e, stackTrace);
+      return false;
+    }
+  }
+
+  Future<bool> _checkPlayIntegrityMain(HslSecurity hslSecurity) async {
+    if (kDebugMode && !isTesting) {
+      return false;
+    }
+    try {
+      PlayIntegrityStatus playIntegrityStatus = await _extractAndCheckPlayIntegrity(hslSecurity, false); // Default to true or handle as needed for non-Android
+      _logDebug("_checkPlayIntegrityMain playIntegrityStatus- $playIntegrityStatus");
+      return playIntegrityStatus == PlayIntegrityStatus.failed;
+    } catch (e, stackTrace) {
+      _logError('Error checking _checkPlayIntegrityMain', e, stackTrace);
       return false;
     }
   }
