@@ -50,12 +50,16 @@ class SecurityPluginHslPlatformPlugin: FlutterPlugin, MethodCallHandler {
       IntegrityAPIProvider.getInstance(applicationContext).initiateIntegrityDetection(object :
         OnIntegrityProviderCallback {
         override fun onSuccess(verdict: ArrayList<String>) {
-          handleHardwareBackedAttestation(verdict)
+//          handleHardwareBackedAttestation(verdict)
           result.success(verdict)
         }
 
         override fun onError(throwable: Throwable) {
-          result.success(arrayListOf<String>())
+          val playIntegrityList = arrayListOf<String>()
+          if (throwable.message?.contains("Network error") == true || throwable.message?.contains("-3") == true) {
+            playIntegrityList.add("NETWORK_ERROR")
+          }
+          result.success(playIntegrityList)
         }
       })
     } else if (call.method == SHA_DETECTION) {

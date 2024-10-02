@@ -4,16 +4,21 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_jailbreak_detection/flutter_jailbreak_detection.dart';
 import 'package:flutter_security_checker/flutter_security_checker.dart';
+import 'package:security_plugin_hsl_platform/models/play_integrity_status.dart';
 import 'package:security_plugin_hsl_platform/security_check_result.dart';
+import 'package:security_plugin_hsl_platform/security_utils/play_integrity_util.dart';
 import 'package:security_plugin_hsl_platform/security_utils/security_utils.dart';
 import 'package:security_plugin_hsl_platform/util/encrypt_pref.dart';
+import 'package:security_plugin_hsl_platform/util/internet_connectivity_util.dart';
 
 import 'device_security_status.dart';
+import 'models/hsl_security.dart';
 import 'security_plugin_hsl_platform_platform_interface.dart';
 
 const String MEETS_DEVICE_INTEGRITY = "MEETS_DEVICE_INTEGRITY";
 const String MEETS_BASIC_INTEGRITY = "MEETS_BASIC_INTEGRITY";
 const String MEETS_STRONG_INTEGRITY = "MEETS_STRONG_INTEGRITY";
+const String NETWORK_ERROR = "NETWORK_ERROR";
 
 /// An implementation of [SecurityPluginHslPlatformPlatform] that uses method channels.
 class MethodChannelSecurityPluginHslPlatform
@@ -22,24 +27,31 @@ class MethodChannelSecurityPluginHslPlatform
   @visibleForTesting
   final methodChannel = const MethodChannel('security_plugin_hsl_platform');
   List<String> secondaryMessage = [];
-  final isTesting = true;
+  bool isTesting = false;
   @override
   Future<String?> getPlatformVersion() async {
     final version =
         await methodChannel.invokeMethod<String>('getPlatformVersion');
     return version;
   }
+  @override
+  Future<PlayIntegrityStatus?> checkPlayIntegrity(HslSecurity hslSecurity) async {
+    PlayIntegrityStatus playIntegrityStatus = await _extractAndCheckPlayIntegrity(hslSecurity, true);
+    return playIntegrityStatus;
+  }
 
   @override
-  Future<SecurityCheckResult> init() async {
+  Future<SecurityCheckResult> init(HslSecurity hslSecurity) async {
     bool isTampered = false;
     bool sslVerified = true;
+    isTesting = hslSecurity.isTesting;
     try {
       final results = await Future.wait([
-        _checkNativeRootDetection(),
-        _checkRoot(),
-        _checkAppIntegrity(),
-        _checkiOSSpecificSecurity()
+        _checkNativeRootDetection(hslSecurity),
+        _checkRoot(hslSecurity),
+        _checkAppIntegrity(hslSecurity),
+        _checkiOSSpecificSecurity(hslSecurity),
+        _checkPlayIntegrityMain(hslSecurity),
       ]);
       // if (Platform.isAndroid) _checkAndroidSpecificSecurity()
       final nativeRootCheck = results[0];
@@ -50,15 +62,10 @@ class MethodChannelSecurityPluginHslPlatform
       _logDebug("[_checkAppIntegrity] - isAppVerified - $isAppVerified");
       bool jailbroken =  results[3];
       _logDebug("[_checkiOSSpecificSecurity] - jailbroken - $jailbroken");
+      bool isPlayIntegrityFailed =  results[4];
+      _logDebug("[_checkPlayIntegrityMain] - isPlayIntegrityFailed - $isPlayIntegrityFailed");
 
       final bool rooted = checkRootFlutterSc || nativeRootCheck || jailbroken;
-
-/*    final bool nativeRootCheck = await _checkNativeRootDetection();
-    _logDebug("nativeRootCheck - $nativeRootCheck");
-    final bool checkRootFlutterSc = await _checkRoot();
-    _logDebug("checkRootFlutterSc - $checkRootFlutterSc");
-    final bool rooted = checkRootFlutterSc || nativeRootCheck;
-    final bool isAppVerified = await _checkAppIntegrity();*/
 
     if (rooted) {
       _logDebug("device is rooted");
@@ -90,6 +97,8 @@ class MethodChannelSecurityPluginHslPlatform
     } else if (!isAppVerified) {
       return SecurityCheckResult(
           DeviceSecurityStatus.unverified, secondaryMessage);
+    } else if (isPlayIntegrityFailed) {
+      return SecurityCheckResult(DeviceSecurityStatus.playIntegrityFail, secondaryMessage);
     } else if (!sslVerified) {
       return SecurityCheckResult(
           DeviceSecurityStatus.sslUnverified, secondaryMessage);
@@ -115,81 +124,86 @@ class MethodChannelSecurityPluginHslPlatform
     }
   }
 
-  Future<bool> _checkRoot() async {
-    if (kDebugMode && !isTesting) {
+  Future<bool> _checkRoot(HslSecurity hslSecurity) async {
+    try {
+      if (hslSecurity.rootCheck == false) return false;
+      if (kDebugMode && !isTesting) {
+        return false;
+      }
+      return FlutterSecurityChecker.isRooted;
+    } catch (e) {
       return false;
     }
-    return FlutterSecurityChecker.isRooted;
   }
 
-  Future<bool> _checkNativeRootDetection() async {
+  Future<bool> _checkNativeRootDetection(HslSecurity hslSecurity) async {
+    if (Platform.isAndroid && hslSecurity.rootCheck == false) return false;
+    if (Platform.isIOS && hslSecurity.jailbreakCheck == false) return false;
     if (kDebugMode && !isTesting) {
       return false;
     }
 
     try {
-      // final bool isRooted = await methodChannel.invokeMethod<bool>('root_detection') ?? false;
-      final bool isRooted;
-      List<dynamic>? playIntegrityRaw;
-      bool isPlayIntegrityPassed = true; // Default to true or handle as needed for non-Android
-      final results = await Future.wait([
-        methodChannel.invokeMethod<bool>('root_detection'),
-        if (Platform.isAndroid) methodChannel.invokeMethod<List<dynamic>>('play_integrity'),
-      ]);
-      // Extract results
-      isRooted = results[0] as bool? ?? false;
-      _logDebug("_checkNativeRootDetection isRooted- $isRooted");
-      if (Platform.isAndroid) {
-        playIntegrityRaw = results[1] as List<dynamic>?;
-        // Fetch Play Integrity data with null safety
-        // final List<dynamic>? playIntegrityRaw =
-        //     await methodChannel.invokeMethod<List<dynamic>>('play_integrity');
-        // Handle potential null values explicitly
-        if (playIntegrityRaw != null) {
-          final List<String> playIntegrity =
-              playIntegrityRaw.map((e) => e.toString()).toList();
-          isPlayIntegrityPassed = _isPlayIntegrity(playIntegrity);
+      final bool isRooted = await methodChannel.invokeMethod<bool>('root_detection') ?? false;
 
-          // Check if Play Integrity check has passed
-          if (!isPlayIntegrityPassed) {
-            secondaryMessage.add(
-                "Warning: Play Integrity Check Failed - The application did not pass the Play Integrity check. This may indicate a compromised or unverified environment.");
-          }
-
-          _logDebug("PlayIntegrity List - $playIntegrity");
-          _logDebug("isPlayIntegrityPassed - $isPlayIntegrityPassed");
-        } else {
-          _logDebug("PlayIntegrity check returned null.");
-        }
-      } else {
-        _logDebug("Skipping play integrity check on non-Android platform.");
+      if (isRooted) {
+        secondaryMessage.add("Warning: Root detected! The application failed the root detection check.");
       }
-      return isRooted || !isPlayIntegrityPassed;
+
+      _logDebug("_checkNativeRootDetection isRooted- $isRooted");
+      return isRooted;
     } catch (e, stackTrace) {
       _logError('Error checking native root detection', e, stackTrace);
       return false;
     }
   }
 
-  bool _isPlayIntegrity(List<String> playIntegrity) {
-    return playIntegrity.contains(MEETS_BASIC_INTEGRITY) ||
-        playIntegrity.contains(MEETS_DEVICE_INTEGRITY);
-/*        &&
-        playIntegrity.contains(MEETS_DEVICE_INTEGRITY) &&
-        playIntegrity.contains(MEETS_STRONG_INTEGRITY);*/
+  Future<bool> _checkPlayIntegrityMain(HslSecurity hslSecurity) async {
+    if (kDebugMode && !isTesting) {
+      return false;
+    }
+    try {
+      PlayIntegrityStatus playIntegrityStatus = await _extractAndCheckPlayIntegrity(hslSecurity, false); // Default to true or handle as needed for non-Android
+      _logDebug("_checkPlayIntegrityMain playIntegrityStatus- $playIntegrityStatus");
+      return playIntegrityStatus == PlayIntegrityStatus.failed;
+    } catch (e, stackTrace) {
+      _logError('Error checking _checkPlayIntegrityMain', e, stackTrace);
+      return false;
+    }
   }
 
-  Future<bool> _checkAppIntegrity() async {
+  Future<PlayIntegrityStatus> _isPlayIntegrity(
+      List<String> playIntegrity, bool isPlayIntegrityEnabled) async {
+    if (isPlayIntegrityEnabled == false) return PlayIntegrityStatus.passed;
+    try {
+      if (playIntegrity.contains(NETWORK_ERROR)) {
+        return PlayIntegrityStatus.networkError;
+      }
+      var playIntegrityPassed = playIntegrity.contains(MEETS_BASIC_INTEGRITY) ||
+          playIntegrity.contains(MEETS_DEVICE_INTEGRITY);
+      return playIntegrityPassed
+          ? PlayIntegrityStatus.passed
+          : PlayIntegrityStatus.failed;
+    } catch (e) {
+      return PlayIntegrityStatus.passed;
+    }
+  }
+
+  Future<bool> _checkAppIntegrity(HslSecurity hslSecurity) async {
+    if (hslSecurity.appIntegrity == false) return true;
     if (kDebugMode && !isTesting) {
       return true;
     }
 
     try {
-      final bool isRealDevice = await _isRealDevice();
+      final bool isRealDevice = hslSecurity.emulatorCheck ? await _isRealDevice() : true;
       final bool hasCorrectlyInstalled =
           Platform.isAndroid ? await _hasCorrectlyInstalled() : true;
-      final bool hasFridaOrMagiskDetected =
-          Platform.isAndroid ? await _fridaOrMagiskDetected() : false;
+      _logDebug("AppIntegrity: hasCorrectlyInstalled: $hasCorrectlyInstalled");
+      _logDebug("AppIntegrity: isRealDevice: $isRealDevice");
+      final bool hasFridaOrMagiskDetected = hslSecurity.fridaMagisk
+          ? Platform.isAndroid ? await _fridaOrMagiskDetected() : false
+          : false;
 
       // Check if the device is real
       if (!isRealDevice) {
@@ -248,19 +262,30 @@ class MethodChannelSecurityPluginHslPlatform
 
   Future<bool> _hasCorrectlyInstalled() async {
     try {
-      return FlutterSecurityChecker.hasCorrectlyInstalled;
+      var hasCorrectlyInstalled = await FlutterSecurityChecker.hasCorrectlyInstalled;
+      _logDebug("AppIntegrity: hasCorrectlyInstalled: $hasCorrectlyInstalled");
+      return hasCorrectlyInstalled;
+    } catch (e) {
+      _logError('AppIntegrity: hasCorrectlyInstalled: Error checking if app is correctly installed', e);
+      return false;
+    }
+  }
+
+  Future<bool> _checkiOSSpecificSecurity(HslSecurity hslSecurity) async {
+    if (Platform.isIOS == false) return false;
+    try {
+      if (hslSecurity.jailbreakCheck == false) return false;
+      bool jailbroken = await FlutterJailbreakDetection.jailbroken;
+      bool developerMode = await FlutterJailbreakDetection.developerMode; // android only.
+      _logDebug("FlutterJailbreakDetection: jailbroken $jailbroken");
+      _logDebug("FlutterJailbreakDetection: developerMode $developerMode");
+      return jailbroken;
     } catch (e) {
       _logError('Error checking if app is correctly installed', e);
       return false;
     }
   }
-  Future<bool> _checkiOSSpecificSecurity() async {
-    bool jailbroken = await FlutterJailbreakDetection.jailbroken;
-    bool developerMode = await FlutterJailbreakDetection.developerMode; // android only.
-    _logDebug("FlutterJailbreakDetection: jailbroken $jailbroken");
-    _logDebug("FlutterJailbreakDetection: developerMode $developerMode");
-    return jailbroken;
-  }
+
   Future<bool> _fridaOrMagiskDetected() async {
     try {
       final bool isAppIntegrity =
@@ -272,6 +297,51 @@ class MethodChannelSecurityPluginHslPlatform
     } catch (e) {
       _logError('Error detecting Frida or Magisk', e);
       return false;
+    }
+  }
+
+  Future<PlayIntegrityStatus> _extractAndCheckPlayIntegrity(HslSecurity hslSecurity, bool isHome) async {
+    try {
+      if (kDebugMode && !isTesting) {
+        return PlayIntegrityStatus.passed;
+      }
+      var isPlayIntegrityEnabled = isHome ? hslSecurity.playIntegrityHome : hslSecurity.playIntegrity;
+      if (isPlayIntegrityEnabled == false) return PlayIntegrityStatus.passed;
+      // Check for internet connectivity before performing the Play Integrity check
+      var internetStatus = await InternetConnectivityUtil.internetStatus();
+      _logDebug("HSL_SECURITY:: internetStatus: $internetStatus");
+      // If there is no internet connection, bypass the Play Integrity check
+      if (!internetStatus) {
+        _logDebug("No internet connection. Skipping Play Integrity check.");
+        return PlayIntegrityStatus.passed;
+      }
+      _logDebug("_extractAndCheckPlayIntegrity called");
+      if (!Platform.isAndroid) {
+        _logDebug("Skipping play integrity check on non-Android platform.");
+        return PlayIntegrityStatus.passed; // Returning true for non-Android platforms
+      }
+
+      List<dynamic>? playIntegrityRaw = await methodChannel.invokeMethod<List<dynamic>>('play_integrity');
+      if (playIntegrityRaw != null) {
+        final List<String> playIntegrity = playIntegrityRaw.map((e) => e.toString()).toList();
+        _logDebug("PlayIntegrity List - $playIntegrity");
+
+        final PlayIntegrityStatus playIntegrityStatus = await _isPlayIntegrity(playIntegrity, isPlayIntegrityEnabled);
+        _logDebug("PlayIntegrityStatus - ${playIntegrityStatus.name}");
+
+        if (playIntegrityStatus == PlayIntegrityStatus.failed) {
+          secondaryMessage.add(
+              "Warning: Play Integrity Check Failed - The application did not pass the Play Integrity check. This may indicate a compromised or unverified environment.");
+        }
+        PlayIntegrityUtil().isPlayIntegrityChecked = true;
+        return playIntegrityStatus;
+      } else {
+        _logDebug("PlayIntegrity check returned null.");
+        return PlayIntegrityStatus.passed; // Returning true if the check returned null
+      }
+    } catch (e, stackTrace) {
+      _logError('Error checking play integrity', e, stackTrace);
+      return PlayIntegrityStatus.passed; // Assuming Play Integrity check passed if there's an error
     }
   }
 

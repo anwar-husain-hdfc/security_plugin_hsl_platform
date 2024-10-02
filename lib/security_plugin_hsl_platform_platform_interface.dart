@@ -1,6 +1,8 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:security_plugin_hsl_platform/security_check_result.dart';
 
+import 'models/hsl_security.dart';
+import 'models/play_integrity_status.dart';
 import 'security_plugin_hsl_platform_method_channel.dart';
 
 abstract class SecurityPluginHslPlatformPlatform extends PlatformInterface {
@@ -27,7 +29,10 @@ abstract class SecurityPluginHslPlatformPlatform extends PlatformInterface {
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
-  Future<SecurityCheckResult> init() {
+  Future<PlayIntegrityStatus?> checkPlayIntegrity(HslSecurity hslSecurity) {
+    throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+  Future<SecurityCheckResult> init(HslSecurity hslSecurity) {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 }

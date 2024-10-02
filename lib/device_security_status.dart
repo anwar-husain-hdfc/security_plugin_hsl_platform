@@ -3,5 +3,6 @@ enum DeviceSecurityStatus {
   tampered,
   rooted,
   unverified,
-  sslUnverified
+  sslUnverified,
+  playIntegrityFail
 }

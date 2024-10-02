@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:security_plugin_hsl_platform/device_security_status.dart';
+import 'package:security_plugin_hsl_platform/models/hsl_security.dart';
 import 'package:security_plugin_hsl_platform/security_check_result.dart';
 import 'package:security_plugin_hsl_platform/security_plugin_hsl_platform.dart';
 import 'package:security_plugin_hsl_platform/ui/hsl_security_alert_widget.dart';
@@ -69,7 +70,19 @@ class _MyAppState extends State<MyApp> {
     // Platform messages may fail, so we use a try/catch PlatformException.
     // We also handle the message potentially returning null.
     try {
-      SecurityCheckResult checkResult = await _securityIrPlugin.init();
+      SecurityCheckResult checkResult = await _securityIrPlugin.init(
+          HslSecurity(
+              rootCheck: true,
+              playIntegrity: true,
+              appIntegrity: true,
+              jailbreakCheck: true,
+              secureScreen: true,
+              sslPinning: true,
+              emulatorCheck: true,
+              fridaMagisk: true,
+              keyLogger: true,
+              playIntegrityHome: true,
+              exemptedHosts: []));
       final securityStatus = checkResult.status;
       debugPrint('HSL_SECURITY: DeviceSecurityStatus ${securityStatus.name}');
       if (securityStatus != DeviceSecurityStatus.secure) {

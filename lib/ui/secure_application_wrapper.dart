@@ -8,10 +8,10 @@ import 'dart:async'; // For StreamSubscription
 class SecureApplicationWrapper extends StatefulWidget {
   final Widget child;
   final bool isSecurityEnabled;
-  const SecureApplicationWrapper({required this.isSecurityEnabled, required this.child});
+  const SecureApplicationWrapper({super.key, required this.isSecurityEnabled, required this.child});
 
   @override
-  _SecureApplicationWrapperState createState() => _SecureApplicationWrapperState();
+  State<StatefulWidget> createState() => _SecureApplicationWrapperState();
 }
 
 class _SecureApplicationWrapperState extends State<SecureApplicationWrapper> {
@@ -53,10 +53,11 @@ class _SecureApplicationWrapperState extends State<SecureApplicationWrapper> {
   Widget build(BuildContext context) {
     if (widget.isSecurityEnabled == false || Platform.isAndroid) {
       return widget.child;
-    } else return SecureApplication(
+    } else {
+      return SecureApplication(
       nativeRemoveDelay: nativeRemoveDelay,
       onNeedUnlock: (secure) async {
-        print('Need unlock. Use biometric to confirm and then secure.unlock() or use the lockedBuilder.');
+        debugPrint('Need unlock. Use biometric to confirm and then secure.unlock() or use the lockedBuilder.');
         return null;
       },
       child: Builder(builder: (context) {
@@ -69,6 +70,7 @@ class _SecureApplicationWrapperState extends State<SecureApplicationWrapper> {
         return widget.child;
       }),
     );
+    }
   }
 }
 
